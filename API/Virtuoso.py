@@ -11,7 +11,7 @@ class VirtuosoApi(object):
         self.api_token = ""
         self.api_url = "https://api.virtuoso.qa/api"
         self.ui_url = "https://app.virtuoso.qa"
-        self.headers = {}
+        self.headers = {"X-Virtuoso-Client-Name:": "Robot Framework"}
         self.goal = self.Goal(self)
         self.journey = self.Journey(self)
         self.plan = self.Plan(self)
@@ -20,7 +20,7 @@ class VirtuosoApi(object):
 
     def _set_auth_header(self) -> None:
         self.headers = {"Authorization": "Bearer " + self.api_token}
-    
+
     def set_virtuoso_environment(self, environment) -> None:
         self.set_api_url("https://api-{}.virtuoso.qa/api".format(environment))
         self.set_ui_url("https://app-{}.virtuoso.qa/api".format(environment))
@@ -42,14 +42,14 @@ class VirtuosoApi(object):
         full_url = self.api_url + url
         response = requests.post(full_url, headers=self.headers, json=payload)
         if response.status_code != 200:
-            retries += 1 
+            retries += 1
             # Retry 3 times if the status code is not 200
             if retries > 3:
                 raise Exception("Failed api requests with status: {} - {}".format(response.status_code, response.__dict__))
             sleep(5)
             self.make_post_request(url, payload, retries)
-                
-        # Usually we should avoid catching all the exemptions  but in this case if converting the response to JSON 
+
+        # Usually we should avoid catching all the exemptions  but in this case if converting the response to JSON
         # we want a pretty error regardless of the error type
         try:
             return response.json()
@@ -60,14 +60,14 @@ class VirtuosoApi(object):
         full_url = self.api_url + url
         response = requests.get(full_url, headers=self.headers)
         if response.status_code != 200:
-            retries += 1 
+            retries += 1
             # Retry 3 times if the status code is not 200
             if retries > 3:
                 raise Exception("Failed api requests with status: {} - {}".format(response.status_code, response.__dict__))
             sleep(5)
             self.make_get_request(url, retries)
-            
-        # Usually we should avoid catching all the exemptions  but in this case if converting the response to JSON 
+
+        # Usually we should avoid catching all the exemptions  but in this case if converting the response to JSON
         # we want a pretty error regardless of the error type
         try:
             return response.json()
@@ -112,7 +112,7 @@ class VirtuosoApi(object):
             payload = {}
             execution = self.api.make_post_request(url, payload)
             return execution["id"]
-            
+
 
 
     class Journey(object):
@@ -162,7 +162,7 @@ class VirtuosoApi(object):
                 if not execution_id:
                     raise Exception("Execution with id {} not found".format(execution_id))
                 return execution_id
-    
+
     class Plan(object):
         def __init__(self, virtuoso_api) -> None:
             self.api = virtuoso_api
