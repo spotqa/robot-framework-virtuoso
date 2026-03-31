@@ -11,7 +11,7 @@ class VirtuosoApi(object):
         self.api_token = ""
         self.api_url = "https://api.virtuoso.qa/api"
         self.ui_url = "https://app.virtuoso.qa"
-        self.headers = {"X-Virtuoso-Client-Name:": "Robot Framework"}
+        self.headers = {"X-Virtuoso-Client-Name": "Robot Framework"}
         self.goal = self.Goal(self)
         self.journey = self.Journey(self)
         self.plan = self.Plan(self)
@@ -19,7 +19,7 @@ class VirtuosoApi(object):
         self._request_delay = 5
 
     def _set_auth_header(self) -> None:
-        self.headers = {"Authorization": "Bearer " + self.api_token}
+        self.headers["Authorization"] = "Bearer " + self.api_token
 
     def set_virtuoso_environment(self, environment) -> None:
         self.set_api_url("https://api-{}.virtuoso.qa/api".format(environment))
@@ -89,10 +89,11 @@ class VirtuosoApi(object):
             self.api = virtuoso_api
 
         def get_latest_goal_snapshots(self, goal_id: int) -> int:
-            goal_snapshots = self.api.make_get_request("/goals/{}/snapshots?envelope=false".format(goal_id))
-            if len(goal_snapshots) < 1:
+            goal_versions = self.api.make_get_request("/goals/{}/versions?envelope=false".format(goal_id))
+            snapshots = goal_versions.get("snapshots", [])
+            if len(snapshots) < 1:
                 raise Exception("Goal {} does not have any executed journeys".format(goal_id))
-            return goal_snapshots[0]
+            return snapshots[0]["snapshotId"]
 
         def get_goal_snapshot(self, goal_id, snapshot_id):
             snapshot = self.api.make_get_request(
