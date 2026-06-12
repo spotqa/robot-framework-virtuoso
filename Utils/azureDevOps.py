@@ -95,6 +95,15 @@ def main():
 
     found_tests = list(filter(lambda point: point.test_case.name in executed_test_cases.names, points))
 
+    if not found_tests:
+        raise Exception(
+            "No matching test points found in plan {} / suite {}.\n"
+            "  Parsed from JUnit ({}): {}\n"
+            "  Suite test case names ({}): {}".format(
+                plan_id, suite_id,
+                len(executed_test_cases.names), executed_test_cases.names,
+                len(points), [point.test_case.name for point in points]))
+
     executed_points = []
     for found_test in found_tests:
         executed_points.append(found_test.id)
