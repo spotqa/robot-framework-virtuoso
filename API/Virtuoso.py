@@ -88,20 +88,11 @@ class VirtuosoApi(object):
         def __init__(self, virtuoso_api: str) -> None:
             self.api = virtuoso_api
 
-        def get_latest_goal_snapshots(self, goal_id: int) -> int:
-            goal_versions = self.api.make_get_request("/goals/{}/versions?envelope=false".format(goal_id))
-            snapshots = goal_versions.get("snapshots", [])
-            if len(snapshots) < 1:
-                raise Exception("Goal {} does not have any executed journeys".format(goal_id))
-            return snapshots[0]["snapshotId"]
-
-        def get_goal_snapshot(self, goal_id, snapshot_id):
-            snapshot = self.api.make_get_request(
-                "/snapshots/{}/goals/{}/testsuites?envelope=false".format(snapshot_id, goal_id))
-            if not snapshot:
-                raise Exception("Could not get snapshot {} for goal {}".format(snapshot_id, goal_id))
-            return snapshot
-
+        def get_goal_journeys(self, goal_id: int) -> list:
+            journeys = self.api.make_get_request(
+                "/testsuites?projectId={}&goalIds[]={}&envelope=false".format(
+                    self.api.project_id, goal_id))
+            return journeys.get("testSuites", [])
 
         def get_project_goals(self, project_id):
             project_goals = self.api.make_get_request(
@@ -128,9 +119,7 @@ class VirtuosoApi(object):
             if not goal_ids:
                 goal_ids = self.api.goal.getProjectGoals(self.api.project_id).keys()
             for goal_id in goal_ids:
-                snapshot_id = self.api.goal.get_latest_goal_snapshots(goal_id)
-                snapshot = self.api.goal.get_goal_snapshot(goal_id, snapshot_id)
-                for journey in snapshot.values():
+                for journey in self.api.goal.get_goal_journeys(goal_id):
                     # This should break if we cannot find it
                     journey_id = journey["id"]
                     journey_title = journey["title"]
@@ -138,8 +127,7 @@ class VirtuosoApi(object):
                         "id": journey_id,
                         "title": journey_title,
                         "goalId": goal_id,
-                        "projectId": self.api.project_id,
-                        "snapshotId": snapshot_id
+                        "projectId": self.api.project_id
                     }
                     if journey_names:
                         if journey_title in journey_names:
@@ -156,8 +144,7 @@ class VirtuosoApi(object):
                     "tags": ["Automated"],
                     "suiteIds": [journey_to_execute["id"]]
                 }
-                url = "/goals/{}/snapshots/{}/execute?envelope=false".format(journey_to_execute["goalId"],
-                                                                             journey_to_execute["snapshotId"])
+                url = "/goals/{}/execute?envelope=false".format(journey_to_execute["goalId"])
                 execution = self.api.make_post_request(url, payload)
                 execution_id = execution.get("id")
                 if not execution_id:
